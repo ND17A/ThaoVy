@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>ThaoVy</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+
+/* 🔥 CHỈ ĐỔI LINK NỀN Ở ĐÂY */
+:root{
+  --bg-url: url("https://hoanghamobile.com/tin-tuc/wp-content/webp-express/webp-images/uploads/2024/05/hinh-mau-hong-3.jpg.webp");
+}
+
+body{
+  margin:0;
+  font-family:'Poppins',sans-serif;
+
+  /* ✅ overlay nhẹ để nền rõ */
+  background:
+    linear-gradient(rgba(10,20,40,.35),rgba(10,20,40,.45)),
+    var(--bg-url);
+
+  background-size:cover;
+  background-position:center;
+  background-attachment:fixed;
+
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.container{
+  text-align:center;
+  color:#fff;
+  text-shadow:0 2px 8px rgba(0,0,0,.6);
+}
+
+.title{
+  font-size:42px;
+  font-weight:700;
+  margin-bottom:20px;
+}
+
+.wheel-wrapper{
+  position:relative;
+  width:420px;
+  height:420px;
+  margin:auto
+}
+
+canvas{
+  border-radius:50%;
+  box-shadow:
+    0 0 30px rgba(0,0,0,.6),
+    inset 0 0 25px rgba(255,255,255,.25);
+  background:transparent;
+}
+
+/* ===== KIM TAM GIÁC (BẢN GỐC) ===== */
+.pointer{
+  position:absolute;
+  top:-12px;
+  left:50%;
+  transform:translateX(-50%);
+  width:0;
+  height:0;
+  border-left:18px solid transparent;
+  border-right:18px solid transparent;
+  border-bottom:42px solid #ff4757;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));
+}
+
+.spin-btn{
+  margin-top:30px;
+  padding:16px 48px;
+  font-size:20px;
+  font-weight:600;
+  border:none;
+  border-radius:50px;
+  cursor:pointer;
+  color:#fff;
+  background:linear-gradient(45deg,#ff6a00,#ff3d00);
+}
+
+.result{
+  margin-top:25px;
+  font-size:28px;
+  font-weight:700;
+  min-height:40px
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <div class="title">Kế hoạch giúp Thảo Vy làm giàu 😎💵</div>
+
+  <div class="wheel-wrapper">
+    <!-- 🔥 kim tam giác -->
+    <div class="pointer"></div>
+    <canvas id="wheel" width="420" height="420"></canvas>
+  </div>
+
+  <button class="spin-btn" onclick="spin()">QUAY THUI</button>
+  <div class="result" id="result"></div>
+</div>
+
+<!-- âm thắng -->
+<audio id="winSound" preload="auto">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
+</audio>
+
+<!-- nhạc nền -->
+<audio id="bgMusic" loop preload="auto">
+  <source src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" type="audio/mpeg">
+</audio>
+
+<!-- âm quay -->
+<audio id="spinTick" preload="auto">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-slot-machine-spin-1935.mp3" type="audio/mpeg">
+</audio>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+// ===== AUDIO FIX =====
+const bgMusic=document.getElementById("bgMusic");
+const spinTick=document.getElementById("spinTick");
+const winSound=document.getElementById("winSound");
+
+function safePlay(audio){
+  if(!audio) return;
+  audio.currentTime=0;
+  const p=audio.play();
+  if(p!==undefined){p.catch(()=>{});}
+}
+
+window.addEventListener("load",()=>{
+  bgMusic.load();
+  spinTick.load();
+  winSound.load();
+});
+
+document.addEventListener("click",function initMusic(){
+  bgMusic.volume=0.4;
+  safePlay(bgMusic);
+  document.removeEventListener("click",initMusic);
+});
+
+// ===== WHEEL =====
+const prizes=["Plan A","Plan B"];
+const colors=["#ff7675","#74b9ff"];
+
+const canvas=document.getElementById("wheel");
+const ctx=canvas.getContext("2d");
+const center=canvas.width/2;
+const arc=Math.PI*2/prizes.length;
+
+let rotation=0;
+let spinning=false;
+
+/* DRAW */
+function drawWheel(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(let i=0;i<prizes.length;i++){
+    const start=rotation+i*arc;
+    const end=start+arc;
+
+    ctx.beginPath();
+    ctx.fillStyle=colors[i%colors.length];
+    ctx.moveTo(center,center);
+    ctx.arc(center,center,center-5,start,end);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(center,center);
+    ctx.rotate(start+arc/2);
+    ctx.fillStyle="#fff";
+    ctx.strokeStyle="rgba(0,0,0,.7)";
+    ctx.lineWidth=5;
+    ctx.font="bold 28px Poppins";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+
+    const textRadius=center-110;
+    ctx.strokeText(prizes[i],textRadius,0);
+    ctx.fillText(prizes[i],textRadius,0);
+    ctx.restore();
+  }
+}
+drawWheel();
+
+/* SPIN */
+function spin(){
+  if(spinning) return;
+  spinning=true;
+
+  document.querySelector(".spin-btn").disabled=true;
+  document.getElementById("result").innerText="";
+
+  spinTick.loop=true;
+  safePlay(spinTick);
+
+  const index=Math.floor(Math.random()*prizes.length);
+  const slice=2*Math.PI/prizes.length;
+  const randomOffset=(Math.random()-0.5)*slice*0.6;
+  const targetRotation=(Math.PI*1.5)-(index*slice+slice/2)+randomOffset;
+
+  const spins=6*2*Math.PI;
+  const finalRotation=spins+targetRotation;
+  const startRotation=rotation;
+  const change=finalRotation-startRotation;
+  const duration=4000;
+
+  let start=null;
+
+  function animate(ts){
+    if(!start) start=ts;
+    const progress=ts-start;
+    const t=Math.min(progress/duration,1);
+    const ease=1-Math.pow(1-t,3);
+
+    rotation=startRotation+change*ease;
+    drawWheel();
+
+    if(t<1) requestAnimationFrame(animate);
+    else finish(index);
+  }
+  requestAnimationFrame(animate);
+}
+
+/* FINISH */
+function finish(index){
+  spinning=false;
+  document.querySelector(".spin-btn").disabled=false;
+
+  spinTick.pause();
+  spinTick.currentTime=0;
+
+  rotation = rotation % (2*Math.PI);
+  drawWheel();
+
+  const prize=prizes[index].trim();
+  document.getElementById("result").innerHTML =
+  "🎉 <b>Tiến hành theo " + prize + "</b> 🥳<br>" +
+  "<span style='font-size:18px;opacity:.9'>Gửi kết quả cho tớ nhé</span>";
+
+  celebrationPro();
+}
+
+/* CONFETTI */
+function celebrationPro(){
+  safePlay(winSound);
+
+  const end=Date.now()+4000;
+  (function frame(){
+    confetti({particleCount:8,angle:60,spread:70,origin:{x:0,y:.7}});
+    confetti({particleCount:8,angle:120,spread:70,origin:{x:1,y:.7}});
+    if(Date.now()<end) requestAnimationFrame(frame);
+  })();
+
+  setTimeout(()=>{
+    confetti({
+      particleCount:250,
+      spread:170,
+      startVelocity:40,
+      gravity:.9,
+      ticks:300,
+      origin:{x:.5,y:-.1}
+    });
+  },400);
+}
+</script>
+</body>
+</html>
