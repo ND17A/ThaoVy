@@ -1,8 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <title>ThaoVy</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -18,41 +21,45 @@ body{
   margin:0;
   font-family:'Poppins',sans-serif;
 
-  /* ✅ overlay nhẹ để nền rõ */
   background:
     linear-gradient(rgba(10,20,40,.35),rgba(10,20,40,.45)),
     var(--bg-url);
 
   background-size:cover;
   background-position:center;
-  background-attachment:fixed;
+  background-attachment:scroll;
 
   min-height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
+  padding:20px;
 }
 
 .container{
   text-align:center;
   color:#fff;
   text-shadow:0 2px 8px rgba(0,0,0,.6);
+  width:100%;
+  max-width:500px;
 }
 
 .title{
-  font-size:42px;
+  font-size:clamp(24px,5vw,42px);
   font-weight:700;
   margin-bottom:20px;
 }
 
 .wheel-wrapper{
   position:relative;
-  width:420px;
-  height:420px;
-  margin:auto
+  width:min(90vw,420px);
+  height:min(90vw,420px);
+  margin:auto;
 }
 
 canvas{
+  width:100%;
+  height:100%;
   border-radius:50%;
   box-shadow:
     0 0 30px rgba(0,0,0,.6),
@@ -60,39 +67,45 @@ canvas{
   background:transparent;
 }
 
-/* ===== KIM TAM GIÁC (BẢN GỐC) ===== */
+/* ===== POINTER ===== */
 .pointer{
   position:absolute;
-  top:-12px;
+  top:-10px;
   left:50%;
   transform:translateX(-50%);
   width:0;
   height:0;
-  border-left:18px solid transparent;
-  border-right:18px solid transparent;
-  border-bottom:42px solid #ff4757;
+  border-left:clamp(10px,3vw,18px) solid transparent;
+  border-right:clamp(10px,3vw,18px) solid transparent;
+  border-bottom:clamp(24px,6vw,42px) solid #ff4757;
   filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));
 }
 
 .spin-btn{
-  margin-top:30px;
-  padding:16px 48px;
-  font-size:20px;
+  margin-top:24px;
+  padding:14px 36px;
+  font-size:clamp(16px,4vw,20px);
   font-weight:600;
   border:none;
   border-radius:50px;
   cursor:pointer;
   color:#fff;
   background:linear-gradient(45deg,#ff6a00,#ff3d00);
+  touch-action:manipulation;
+}
+
+.spin-btn:active{
+  transform:scale(.97);
 }
 
 .result{
-  margin-top:25px;
-  font-size:28px;
+  margin-top:20px;
+  font-size:clamp(18px,4.5vw,28px);
   font-weight:700;
-  min-height:40px
+  min-height:40px;
 }
 </style>
+
 </head>
 
 <body>
@@ -100,26 +113,29 @@ canvas{
   <div class="title">Kế hoạch giúp Thảo Vy làm giàu 😎💵</div>
 
   <div class="wheel-wrapper">
-    <!-- 🔥 kim tam giác -->
     <div class="pointer"></div>
-    <canvas id="wheel" width="420" height="420"></canvas>
+    <canvas id="wheel"></canvas>
   </div>
 
-  <button class="spin-btn" onclick="spin()">QUAY THUI</button>
+<button class="spin-btn" onclick="spin()">QUAY THUI</button>
+
   <div class="result" id="result"></div>
 </div>
 
 <!-- âm thắng -->
+
 <audio id="winSound" preload="auto">
   <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
 </audio>
 
 <!-- nhạc nền -->
+
 <audio id="bgMusic" loop preload="auto">
   <source src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" type="audio/mpeg">
 </audio>
 
 <!-- âm quay -->
+
 <audio id="spinTick" preload="auto">
   <source src="https://assets.mixkit.co/sfx/preview/mixkit-slot-machine-spin-1935.mp3" type="audio/mpeg">
 </audio>
@@ -127,7 +143,7 @@ canvas{
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 <script>
-// ===== AUDIO FIX =====
+// ===== AUDIO =====
 const bgMusic=document.getElementById("bgMusic");
 const spinTick=document.getElementById("spinTick");
 const winSound=document.getElementById("winSound");
@@ -157,13 +173,26 @@ const colors=["#ff7675","#74b9ff"];
 
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
-const center=canvas.width/2;
+
+let center=0;
 const arc=Math.PI*2/prizes.length;
+
+function resizeCanvas(){
+  const size = canvas.clientWidth;
+  canvas.width = size;
+  canvas.height = size;
+  center = canvas.width / 2;
+}
+resizeCanvas();
+window.addEventListener("resize",()=>{
+  resizeCanvas();
+  drawWheel();
+});
 
 let rotation=0;
 let spinning=false;
 
-/* DRAW */
+// DRAW
 function drawWheel(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -184,11 +213,11 @@ function drawWheel(){
     ctx.fillStyle="#fff";
     ctx.strokeStyle="rgba(0,0,0,.7)";
     ctx.lineWidth=5;
-    ctx.font="bold 28px Poppins";
+    ctx.font=`bold ${Math.max(16,center*0.14)}px Poppins`;
     ctx.textAlign="center";
     ctx.textBaseline="middle";
 
-    const textRadius=center-110;
+    const textRadius=center*0.6;
     ctx.strokeText(prizes[i],textRadius,0);
     ctx.fillText(prizes[i],textRadius,0);
     ctx.restore();
@@ -196,7 +225,7 @@ function drawWheel(){
 }
 drawWheel();
 
-/* SPIN */
+// SPIN
 function spin(){
   if(spinning) return;
   spinning=true;
@@ -235,7 +264,7 @@ function spin(){
   requestAnimationFrame(animate);
 }
 
-/* FINISH */
+// FINISH
 function finish(index){
   spinning=false;
   document.querySelector(".spin-btn").disabled=false;
@@ -248,13 +277,13 @@ function finish(index){
 
   const prize=prizes[index].trim();
   document.getElementById("result").innerHTML =
-  "🎉 <b>Tiến hành theo " + prize + "</b> 🥳<br>" +
-  "<span style='font-size:18px;opacity:.9'>Gửi kết quả cho tớ nhé</span>";
+    "🎉 <b>Tiến hành theo " + prize + "</b> 🥳<br>" +
+    "<span style='font-size:18px;opacity:.9'>Gửi kết quả cho tớ nhé</span>";
 
   celebrationPro();
 }
 
-/* CONFETTI */
+// CONFETTI
 function celebrationPro(){
   safePlay(winSound);
 
@@ -277,5 +306,6 @@ function celebrationPro(){
   },400);
 }
 </script>
+
 </body>
 </html>
